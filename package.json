@@ -7,7 +7,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "dev": "rollup -cw",
-    "build": "rm -rf dist && rollup -c"
+    "build": "rm -rf dist && rollup -c && tsc -p ."
   },
   "keywords": [],
   "author": "",

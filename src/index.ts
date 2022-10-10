@@ -2,6 +2,7 @@ import {
   CanvasBox,
   CanvasImg,
   CanvasText,
+  DrawItemType,
   IContentPosition,
   IRealImageOptions,
   SimplePosterParams,
@@ -17,13 +18,8 @@ class SimplePoser {
     this.initCanvas();
   }
 
-  public async draw(drawItems: Array<CanvasImg | CanvasBox | CanvasText>) {
-    // 加载所有图片
-    await Promise.all(
-      drawItems
-        .filter((item) => item.type === "img")
-        .map((i) => this.handleImageOption(i as CanvasImg))
-    );
+  public async draw(drawItems: DrawItemType[]) {
+    await this.loadResource(drawItems);
     // 按照 zIndex 排序
     drawItems.sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
 
@@ -34,6 +30,15 @@ class SimplePoser {
     };
     drawItems.forEach((item) => strategy[item.type](item));
     return this.toImageURL();
+  }
+
+  private loadResource(drawItems: DrawItemType[]) {
+    // 加载所有图片
+    return Promise.all(
+      drawItems
+        .filter((item) => item.type === "img")
+        .map((i) => this.handleImageOption(i as CanvasImg))
+    );
   }
 
   private initCanvas() {
@@ -145,12 +150,12 @@ class SimplePoser {
     });
   }
 
-  private getPosition({ top, left, right, bottom }: IContentPosition) {
+  private getPosition({ top = 0, left = 0, right, bottom }: IContentPosition) {
     const { width, height } = this.options;
-    if (right) {
+    if (typeof right === "number") {
       left = width - right;
     }
-    if (bottom) {
+    if (typeof bottom === "number") {
       top = height - bottom;
     }
     return { x: left, y: top };

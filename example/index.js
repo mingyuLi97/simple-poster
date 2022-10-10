@@ -1,5 +1,7 @@
-import SimplePoster from "../dist/index.js";
-
+import SimplePoster from "../dist/esm/index.js";
+/**
+ * @type {import('../dist/index').default}
+ */
 const poster = new SimplePoster({
   width: 750,
   height: 640 * 2,

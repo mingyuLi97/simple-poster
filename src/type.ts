@@ -69,6 +69,7 @@ export interface CanvasText extends IContentPosition {
   textBaseline?: CanvasTextBaseline;
   direction?: CanvasDirection;
 }
+export type DrawItemType = CanvasImg | CanvasBox | CanvasText;
 
 export interface SimplePosterParams {
   width: number;

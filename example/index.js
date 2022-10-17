@@ -74,6 +74,11 @@ poster
       content: "秦岭大熊猫栖息地",
       font: "26px PingFangSC-Regular",
       color: "#444444",
+      underline: {
+        distance: 10,
+        color: "green",
+        lineWidth: 3,
+      },
     },
   ])
   .then(showPoster);

@@ -68,6 +68,9 @@ export interface CanvasText extends IContentPosition {
   textAlign?: CanvasTextAlign;
   textBaseline?: CanvasTextBaseline;
   direction?: CanvasDirection;
+  underline?:
+    | boolean
+    | { color?: string; distance?: number; lineWidth?: number };
 }
 export type DrawItemType = CanvasImg | CanvasBox | CanvasText;
 

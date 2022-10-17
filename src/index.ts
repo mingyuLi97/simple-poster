@@ -116,6 +116,7 @@ class SimplePoser {
       textAlign,
       textBaseline,
       direction,
+      underline,
     } = option;
     const { x, y } = this.getPosition(option);
     ctx.fillStyle = color;
@@ -124,6 +125,25 @@ class SimplePoser {
     ctx.textBaseline = textBaseline || this.textBaseline;
     ctx.direction = direction || this.textDirection;
     ctx.fillText(content, x, y);
+
+    if (underline) {
+      const config = { color, distance: 2, lineWidth: 1 };
+      if (typeof underline === "object") {
+        Object.assign(config, underline);
+      }
+
+      ctx.beginPath();
+      const metrics = ctx.measureText(content);
+      let actualHeight =
+        metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+      const width = metrics.width;
+      const underlineY = y + actualHeight / 2 + config.distance;
+      ctx.lineWidth = config.lineWidth;
+      ctx.moveTo(x, underlineY);
+      ctx.lineTo(x + width, underlineY);
+      ctx.strokeStyle = config.color;
+      ctx.stroke();
+    }
   }
 
   private handleImageOption(opt: CanvasImg) {

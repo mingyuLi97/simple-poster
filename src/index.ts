@@ -1,190 +1,59 @@
 import {
-  CanvasBox,
-  CanvasImg,
-  CanvasText,
-  DrawItemType,
-  IContentPosition,
-  IRealImageOptions,
-  SimplePosterParams,
+  PosterConfig,
+  ElementType,
+  CreateElementOptionMap,
+  CreateElementReturnMap,
+  DrawSchema,
 } from "./type";
 
-class SimplePoser {
-  context: CanvasRenderingContext2D = null;
-  canvas: HTMLCanvasElement = null;
-  textAlign: CanvasTextAlign = "start";
-  textBaseline: CanvasTextBaseline = "alphabetic";
-  textDirection: CanvasDirection = "inherit";
-  constructor(public options: SimplePosterParams) {
-    this.initCanvas();
+import { ImageElement, RectElement, TextElement } from "./core";
+import { DisplayElement } from "./core/displayElement";
+import { createCanvas } from "./canvas";
+
+function createPoster(
+  config: PosterConfig,
+  data: DisplayElement | DisplayElement[]
+) {
+  const { canvas, context } = createCanvas(config);
+
+  if (Array.isArray(data)) {
+    data.forEach((d) => d.render(context));
+  } else {
+    data.render(context);
   }
-
-  public async draw(drawItems: DrawItemType[]) {
-    await this.loadResource(drawItems);
-    // 按照 zIndex 排序
-    drawItems.sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
-
-    const strategy = {
-      img: this.drawImage.bind(this),
-      box: this.drawBox.bind(this),
-      text: this.drawText.bind(this),
-    };
-    drawItems.forEach((item) => strategy[item.type](item));
-    return this.toImageURL();
+  const { fileType = "jpg", quality = 0.95 } = config;
+  const url = canvas.toDataURL("image/" + fileType, quality);
+  if (!config.debug) {
+    canvas.parentNode.removeChild(canvas);
   }
-
-  private loadResource(drawItems: DrawItemType[]) {
-    // 加载所有图片
-    return Promise.all(
-      drawItems
-        .filter((item) => item.type === "img")
-        .map((i) => this.handleImageOption(i as CanvasImg))
-    );
-  }
-
-  private initCanvas() {
-    const { width, height, debug } = this.options;
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    canvas.style.setProperty("position", "fixed");
-    if (!debug) {
-      canvas.style.setProperty("left", "9999px");
-    }
-    document.body.appendChild(canvas);
-    this.context = canvas.getContext("2d");
-    this.canvas = canvas;
-  }
-  /**
-   * 绘制圆角矩形
-   */
-  private drawRoundRect(x: number, y: number, w: number, h: number, r = 0) {
-    const ctx = this.context;
-    const min = Math.min(w, h);
-    if (r > min / 2) {
-      r = min / 2;
-    }
-    // 开始绘制
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + w, y, x + w, y + h, r);
-    ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r);
-    ctx.arcTo(x, y, x + w, y, r);
-    ctx.closePath();
-  }
-
-  private drawImage(option: IRealImageOptions) {
-    const ctx = this.context;
-    const { x, y } = this.getPosition(option);
-    const { width, height, _img, borderRadius } = option;
-    const w = width || _img.width;
-    const h = height || _img.height;
-    if (borderRadius) {
-      // ctx.fillStyle = ctx.createPattern(_img, "no-repeat");
-      this.drawRoundRect(x, y, w, h, borderRadius);
-      ctx.clip();
-    }
-    ctx.drawImage(_img, x, y, w, h);
-  }
-
-  private drawBox(option: CanvasBox) {
-    const ctx = this.context;
-    const { x, y } = this.getPosition(option);
-    const {
-      width,
-      height,
-      borderRadius,
-      backgroundColor,
-      borderColor = "rgba(0,0,0,0)",
-      borderWidth,
-    } = option;
-
-    ctx.fillStyle = backgroundColor;
-    ctx.strokeStyle = borderColor;
-    ctx.lineWidth = borderWidth;
-    this.drawRoundRect(x, y, width, height, borderRadius);
-    ctx.stroke();
-    ctx.fill();
-  }
-
-  private drawText(option: CanvasText) {
-    const ctx = this.context;
-    const {
-      content,
-      color = "#000000",
-      font,
-      textAlign,
-      textBaseline,
-      direction,
-      underline,
-    } = option;
-    const { x, y } = this.getPosition(option);
-    ctx.fillStyle = color;
-    ctx.font = font;
-    ctx.textAlign = textAlign || this.textAlign;
-    ctx.textBaseline = textBaseline || this.textBaseline;
-    ctx.direction = direction || this.textDirection;
-    ctx.fillText(content, x, y);
-
-    if (underline) {
-      const config = { color, distance: 2, lineWidth: 1 };
-      if (typeof underline === "object") {
-        Object.assign(config, underline);
-      }
-
-      ctx.beginPath();
-      const metrics = ctx.measureText(content);
-      let actualHeight =
-        metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
-      const width = metrics.width;
-      const underlineY = y + actualHeight / 2 + config.distance;
-      ctx.lineWidth = config.lineWidth;
-      ctx.moveTo(x, underlineY);
-      ctx.lineTo(x + width, underlineY);
-      ctx.strokeStyle = config.color;
-      ctx.stroke();
-    }
-  }
-
-  private handleImageOption(opt: CanvasImg) {
-    return new Promise<IRealImageOptions>((resolve, reject) => {
-      this.loadImg(opt.img).then(
-        (img) => resolve(Object.assign(opt, { _img: img })),
-        reject
-      );
-    });
-  }
-
-  private loadImg(u: CanvasImg["img"]) {
-    return new Promise<HTMLImageElement>((resolve, reject) => {
-      if (u instanceof HTMLImageElement) {
-        u.setAttribute("crossOrigin", "Anonymous");
-        resolve(u);
-      } else {
-        const img = new Image();
-        img.setAttribute("crossOrigin", "Anonymous");
-        img.src = u;
-        img.onload = () => resolve(img);
-        img.onerror = reject;
-      }
-    });
-  }
-
-  private getPosition({ top = 0, left = 0, right, bottom }: IContentPosition) {
-    const { width, height } = this.options;
-    if (typeof right === "number") {
-      left = width - right;
-    }
-    if (typeof bottom === "number") {
-      top = height - bottom;
-    }
-    return { x: left, y: top };
-  }
-
-  private toImageURL() {
-    const { fileType = "jpg", quality = 0.95 } = this.options;
-    return this.canvas.toDataURL("image/" + fileType, quality);
-  }
+  return url;
 }
-export { SimplePoser };
-export default SimplePoser;
+
+function createElement<T extends ElementType>(
+  type: T,
+  option: CreateElementOptionMap[T]
+): CreateElementReturnMap[T] {
+  const constructor: Record<ElementType, any> = {
+    image: ImageElement,
+    text: TextElement,
+    rect: RectElement,
+  };
+  return new constructor[type](option);
+}
+
+function schemaToElement(schema: DrawSchema) {
+  const el = createElement(schema.type, schema);
+  if (Array.isArray(schema.children)) {
+    schema.children.forEach((child) => {
+      el.appendChild(schemaToElement(child));
+    });
+  }
+  return el;
+}
+export * from "./shared";
+export {
+  createPoster as default,
+  createElement,
+  schemaToElement,
+  DisplayElement,
+};

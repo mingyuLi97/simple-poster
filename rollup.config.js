@@ -7,18 +7,11 @@ import pkg from "./package.json";
 
 export default defineConfig({
   input: "src/index.ts",
-  output: [
-    {
-      file: pkg.module,
-      format: "es",
-      sourcemap: true,
-    },
-    {
-      file: pkg.main,
-      format: "cjs",
-      sourcemap: true,
-    },
-  ],
+  output: {
+    file: pkg.module,
+    format: "es",
+    sourcemap: true,
+  },
   plugins: [
     nodeResolve(),
     commonjs(),

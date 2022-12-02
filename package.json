@@ -2,8 +2,7 @@
   "name": "@limy-org/simple-poster",
   "version": "1.0.0",
   "description": "简易生成海报的工具，通过配置绘制 canvas 生成海报",
-  "main": "dist/cjs/index.js",
-  "module": "dist/esm/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "dev": "rollup -cw",
